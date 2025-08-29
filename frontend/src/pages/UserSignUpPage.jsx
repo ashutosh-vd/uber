@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import api from '../utils/api.js';
+import { useUserStore } from '../stores/useUserStore.js';
 
 const UserSignUpPage = () => {
   const [isCaptain, setIsCaptain] = useState(false);
@@ -12,9 +13,12 @@ const UserSignUpPage = () => {
   const [vehicleType, setVehicleType] = useState('');
   const [vehiclePlateNumber, setVehiclePlateNumber] = useState('');
   const [vehicleCapacity, setVehicleCapacity] = useState(0);
+  const {isLoggedIn, setLoggedIn, isLoggingIn, setLoggingIn, setName, setCaptain} = useUserStore();
 
-  const navigate = useNavigate();
 
+  if(isLoggedIn) {
+    return <Navigate to={"/login"} />;
+  }
   const submitHandler = async(e) => {
     e.preventDefault();
     if(!email.trim() || !firstname.trim()) {
@@ -46,16 +50,18 @@ const UserSignUpPage = () => {
     try {
       const response = await api.post("/v1/api/auth/register", userData);
       //no if necessary
-      console.log(response.data);
-      if(isCaptain) 
-        navigate("/captain");
-      else 
-        navigate("/user");
+      //console.log(response.data);
+      setLoggedIn(true);
+      setCaptain(response?.data?.isCaptain);
+      setName(response?.data?.fullname?.firstname);
     }
     catch(error) {
       const message = error?.response?.data?.message || error?.message || "something went wrong.";
       console.error(error?.response?.status, message);
-      return alert(message);
+      alert(message);
+    }
+    finally {
+      setLoggingIn(false);
     }
   }
   return (
@@ -103,8 +109,9 @@ const UserSignUpPage = () => {
 
           <button type="submit" 
           className='bg-blue-300 px-2 py-1 rounded-md hover:bg-blue-400 cursor-pointer select-none transform transition-transform duration-300 hover:scale-110 '
+          disabled = {isLoggingIn}
           >
-            Submit
+            {isLoggingIn ? "O" : "Submit"}
           </button>
         </form>
       </div>

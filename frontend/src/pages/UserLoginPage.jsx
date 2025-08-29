@@ -23,13 +23,9 @@ const UserLoginPage = () => {
     setLoggingIn(true);
     try {
       const response = await api.post("/v1/api/auth/login", userData);
-      console.log(response);
       setLoggedIn(true);
       setName(response?.data?.user?.fullname?.firstname);
       setCaptain(response?.data?.isCaptain);
-      console.log(response.data.isCaptain);
-      console.log(useUserStore.getState().isLoggedIn);
-      console.log(useUserStore.getState().isCaptain);
     }
     catch(err) {
       const message = err?.response?.data?.message || err?.message || "something went wrong";
