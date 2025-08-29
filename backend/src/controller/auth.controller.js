@@ -4,9 +4,13 @@ import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 
 export const registerUserController = async (req, res) => {
-  const {fullname, email, password, isCaptain, vehicle = null} = req.body;
+  console.log(req.body);
+  const {fullname, email, password, isCaptain, vehicle} = req.body;
   if(!email.trim() || !fullname.firstname.trim() || !password) {
     return res.status(400).json({"message": "The email, firstname and password fields are necessary."});
+  }
+  if(isCaptain && !vehicle) {
+    return res.status(400).json({"message": "vehicle status required for captain."});
   }
   try {
     let user = await User.findOne({ email });
@@ -33,8 +37,8 @@ export const registerUserController = async (req, res) => {
 
     if(isCaptain) {
       try {
-        if(!vehicle?.plate?.trim() || !vehicle?.vehicleType?.trim() || !vehicle?.capacity) {
-          return res.status(401).json({"message": "vehicle filed necessary for Captain."});
+        if(!vehicle?.plate?.trim() || !vehicle?.vehicleType?.trim() || vehicle?.capacity === 0) {
+          return res.status(401).json({"message": "vehicle field necessary for Captain."});
         }
         const captain = new Captain({
           user: user._id,

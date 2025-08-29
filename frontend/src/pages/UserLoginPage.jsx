@@ -1,12 +1,16 @@
 import React, { useState } from 'react'
 import api from '../utils/api.js';
-import { useNavigate } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
+import { useUserStore } from '../stores/useUserStore.js';
 
 const UserLoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const {isLoggedIn, setLoggedIn, isCaptain, setCaptain, isLoggingIn, setLoggingIn, setName} = useUserStore();
 
-  const navigate = useNavigate();
+  if(isLoggedIn) {
+    return <Navigate to={isCaptain? "/captain" : "/user"}/>;
+  }
   const submitHandler = async(e) => {
     e.preventDefault();
     if(!email.trim() || password.length === 0) {
@@ -16,19 +20,24 @@ const UserLoginPage = () => {
       email,
       password
     }
+    setLoggingIn(true);
     try {
       const response = await api.post("/v1/api/auth/login", userData);
-      if(response?.data?.isCaptain) {
-        navigate("/captain");
-      }
-      else {
-        navigate("/user");
-      }
+      console.log(response);
+      setLoggedIn(true);
+      setName(response?.data?.user?.fullname?.firstname);
+      setCaptain(response?.data?.isCaptain);
+      console.log(response.data.isCaptain);
+      console.log(useUserStore.getState().isLoggedIn);
+      console.log(useUserStore.getState().isCaptain);
     }
     catch(err) {
       const message = err?.response?.data?.message || err?.message || "something went wrong";
       console.error(err?.response?.status, " ", message);
-      return alert(message);
+      alert(message);
+    }
+    finally {
+      setLoggingIn(false);
     }
   };
   return (
@@ -45,7 +54,9 @@ const UserLoginPage = () => {
           <input type="password" name="password" placeholder='Password'
             className='border-none p-2 rounded-md outline-none bg-zinc-400'
             onChange={(e) => setPassword(e.target.value)}/>
-          <button type="submit" className='bg-blue-100 px-2 py-1 rounded-md'>submit</button>
+          <button type="submit" className='bg-blue-100 px-2 py-1 rounded-md' disabled={isLoggingIn}>
+            { !isLoggingIn ? "Submit" : "o"}
+          </button>
         </form>
 
       </div>

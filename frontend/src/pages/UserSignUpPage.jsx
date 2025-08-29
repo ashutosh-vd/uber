@@ -35,9 +35,11 @@ const UserSignUpPage = () => {
       isCaptain,
     };
     if(isCaptain) {
-      userData.vehicleCapacity = vehicleCapacity;
-      userData.vehicleType = vehicleType;
-      userData.vehiclePlateNumber = vehiclePlateNumber;
+      userData.vehicle = {
+        capacity: vehicleCapacity,
+        vehicleType: vehicleType,
+        plate: vehiclePlateNumber,
+      }
     }
     // console.log(response.status);
     // console.log(response.data);
@@ -93,9 +95,9 @@ const UserSignUpPage = () => {
           <input type="text" name="vehiclePlateNumber"  placeholder='vehicle plate' 
             className='p-2 bg-zinc-400 border-none outline-none rounded-md'
             onChange={(e) => setVehiclePlateNumber(e.target.value)}/>
-          <input type="number" name="vehicleCapacity" placeholder='vehicle capacity' 
+          <input type="number" name="vehicleCapacity" placeholder='vehicle capacity'
             className='p-2 bg-zinc-400 border-none outline-none rounded-md'
-            onChange={(e) => setVehicleCapacity(e.target.value)}/>
+            onChange={(e) => setVehicleCapacity(Math.max(e.target.value, 0))}/>
           </>)
           }
 
