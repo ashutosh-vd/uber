@@ -4,7 +4,7 @@ import { useUserStore } from '../stores/useUserStore.js';
 import api from '../utils/api.js';
 
 const Navbar = () => {
-  const {isLoggedIn, logout} = useUserStore();
+  const {isLoggedIn, logout, isCaptain} = useUserStore();
   const logoutHandler = async () => {
     try {
       await api.post("/v1/api/auth/logout");
@@ -23,7 +23,11 @@ const Navbar = () => {
       {
         isLoggedIn &&
         <>
-        <div>Book a ride</div>
+        {
+          isCaptain ? 
+          <div>Ride Request</div> :
+          <div>Book a ride</div>
+        }
         <div>Profile</div>
         <div onClick={logoutHandler} className='cursor-pointer select-none'>Log out</div>
         </>

@@ -4,7 +4,7 @@ import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 
 export const registerUserController = async (req, res) => {
-  console.log(req.body);
+  //console.log(req.body);
   const {fullname, email, password, isCaptain, vehicle} = req.body;
   if(!email.trim() || !fullname.firstname.trim() || !password) {
     return res.status(400).json({"message": "The email, firstname and password fields are necessary."});
