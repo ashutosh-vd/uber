@@ -14,6 +14,7 @@ const Navbar = () => {
       return alert("user logout failed");
     }
   };
+
   return (
   <nav className='flex justify-between px-6 py-8 bg-black text-white'>
     <Link to={'/'}>

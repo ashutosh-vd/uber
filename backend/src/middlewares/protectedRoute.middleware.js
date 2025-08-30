@@ -6,15 +6,27 @@ export const protectedRoute = async (req, res, next) => {
     if(!at) {
       return res.status(401).json({"message": "Invalid credential Login."})
     }
-    const decoded = jwt.verify(at, process.env.ACCESS_TOKEN_SECRET);
+
+    let decoded = "";
+    try {
+      decoded = await jwt.verify(at, process.env.ACCESS_TOKEN_SECRET);
+    }
+    catch (err) {
+      console.log(err?.message);
+      return res.status(401).json({"message": err?.message || "Invalid credential Login."});
+    }
+    
     if(!decoded || !decoded._id) {
       return res.status(401).json({"message": "Login required."});
     }
+    
     req.user = decoded;
+    
     return next();
   }
+  
   catch(err) {
-    console.log(err?.message);
+    console.log("jwt auth error:",err?.message);
     return res.status(500).json({"message": "internal server Error."});
   }
 } 

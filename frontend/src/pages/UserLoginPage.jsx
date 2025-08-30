@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import api from '../utils/api.js';
 import { Navigate } from 'react-router-dom';
 import { useUserStore } from '../stores/useUserStore.js';
@@ -6,7 +6,11 @@ import { useUserStore } from '../stores/useUserStore.js';
 const UserLoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const {isLoggedIn, setLoggedIn, isCaptain, setCaptain, isLoggingIn, setLoggingIn, setName} = useUserStore();
+  const {isLoggedIn, setLoggedIn, isCaptain, setCaptain, isLoggingIn, setLoggingIn, setName, checkAuth} = useUserStore();
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
 
   if(isLoggedIn) {
     return <Navigate to={isCaptain? "/captain" : "/user"}/>;

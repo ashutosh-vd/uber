@@ -15,6 +15,20 @@ const UserHomePage = () => {
   const [center, setCenter] = useState([28.6139, 77.2090]);
   const [dropCenter, setDropCenter] = useState([28.6139, 77.2090]);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
+
+  const [isRequested, setIsRequested] = useState(false);
+  const [isAccepted, setIsAccepted] = useState(false);
+  const [isRejected, setIsRejected] = useState(false);
+  const [captain, setCaptain] = useState(null);
+  
+  useEffect(() => {
+    if(isRejected) {
+      setIsRequested(false);
+      setCaptain(null);
+      setShowVehiclePopup(false);
+    }
+  }, [isRejected]);
+
   if(!isLoggedIn) {
     return <Navigate to={"/login"} />;
   }
@@ -86,7 +100,18 @@ const UserHomePage = () => {
   
   const confirmRide = () => {
     setShowVehiclePopup(false);
-  }; 
+    setIsRequested(true);
+    // setCaptain({
+    //   name: "Captain",
+    //   phone: "1234567890",
+    //   vehicle: {
+    //     plate: "ABC123",
+    //     capacity: 4,
+    //     vehicleType: "Car"
+    //   },
+    // })
+  };
+
 
   const vehicles = [
     { name: "Car", icon: <FaCar size={30} />, capacity: 4, price: "₹250" },
@@ -227,11 +252,90 @@ const UserHomePage = () => {
             ))}
           </div>
           <button
-            className="mt-4 w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full"
+            className={`mt-4 w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full ${!selectedVehicle || !pickup || !drop ? "opacity-50 cursor-not-allowed" : ""}`}
             onClick={() => confirmRide()}
             disabled={!selectedVehicle || !pickup || !drop}
           >
             Confirm Ride
+          </button>
+        </motion.div>
+      )}
+      {/* ride request sent message */}
+      {isRequested && (
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 50 }}
+          className="absolute bottom-10 left-64 transform -translate-x-1/2 bg-white p-6 rounded-2xl shadow-2xl z-10"
+        >
+          <div className="flex flex-row justify-between">
+            <h2 className="text-lg font-semibold mb-4">Ride Request Sent</h2>
+            {/* loading icon */}
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
+          </div>
+          <p className="text-gray-600">Your ride request has been sent successfully.</p>
+          
+          <button className="mt-4 w-full bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" 
+          onClick={() => {
+            setIsRequested(false);
+            setShowVehiclePopup(true);
+          }}
+          >
+            cancel
+          </button>
+        </motion.div>
+      )}
+      {/* ride confirmed message */}
+      {isAccepted && (
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 50 }}
+          className="absolute bottom-10 left-64 transform -translate-x-1/2 bg-white p-6 rounded-2xl shadow-2xl z-10"
+        >
+          <div className="flex flex-row justify-between">
+            <h2 className="text-lg font-semibold mb-4">Ride Confirmed</h2>  
+            <div className="bg-green-500 animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
+          </div>
+          <p className="text-gray-600">Your ride has been confirmed. captain on the way...</p>
+          {/* captain info */}
+          <div className="mt-4">
+            <p className="text-gray-600">Captain Name: {captain.name}</p>
+            <p className="text-gray-600">Captain Phone: {captain.phone}</p>
+            <div>
+              <p>Vehicle: {captain.vehicle.vehicleType}</p>
+              <p>Capacity: {captain.vehicle.capacity} people</p>
+              <p>Plate Number: {captain.vehicle.plate}</p>
+            </div>
+          </div>
+          <button className="mt-4 w-full bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" 
+          onClick={() => {
+            setIsAccepted(false);
+          }}
+          >
+            cancel
+          </button>
+        </motion.div>
+      )}
+      {isRejected && !showVehiclePopup && (
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 50 }}
+          className="absolute bottom-10 left-64 transform -translate-x-1/2 bg-white p-6 rounded-2xl shadow-2xl z-10"
+        >
+          <div className="flex flex-row justify-between">
+            <h2 className="text-lg font-semibold mb-4">Ride Rejected</h2>  
+            <div className="bg-red-500 animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-900"></div>
+          </div>
+          <p className="text-gray-600">Your ride has been rejected. Please try again.</p>
+          <button className="mt-4 w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" 
+          onClick={() => {
+            setIsRejected(false);
+            setShowVehiclePopup(true);
+          }}
+          >
+            continue
           </button>
         </motion.div>
       )}
@@ -240,3 +344,4 @@ const UserHomePage = () => {
 }
 
 export default UserHomePage
+

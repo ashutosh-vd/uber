@@ -123,23 +123,42 @@ export const refreshAccessToken = async (req, res) => {
     const decodedRefreshToken = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
 
     if(!decodedRefreshToken?._id) {
-      return res.status(401).json({"message" : "Expired Token"});
+      return res.status(401).json({"message" : "Expired refresh token"});
     }
     const user = await User.findOne({_id : decodedRefreshToken._id});
     
     if(!user) {
-      return res.status(401).json({"message": "Invalid"});
+      return res.status(401).json({"message": "Invalid USER"});
     }
-    if(decodedRefreshToken !== user?.refreshToken) {
-      res.status(401).json({"message": "Invalid"});
+    if(refreshToken !== user?.refreshToken) {
+      res.status(401).json({"message": "Invalid RT"});
     }
 
-    const at = user.generateAccessToken();
+    const at = await user.generateAccessToken();
+    // console.log(at);
 
-    return res.status(200).cookie("at", at, COOKIE_CONFIG);
+    return res.status(200).cookie("at", at, COOKIE_CONFIG).json({
+      "fullname": user.fullname,
+      "email": user.email,
+      "isCaptain": user.isCaptain,
+    });
   }
   catch (err) {
     console.log(err?.message);
     return res.status(500).json({"message": "JWT error"});
   }
-}
+};
+
+export const getUser = async(req, res) => {
+  try {
+    if(req.user) {
+      res.status(200).json(req.user);
+    }
+    else {
+      res.status(401).json({"message": "login required. User not defined."});
+    }
+  }
+  catch {
+    res.status(500).json({"message": "Internal Server Error."});
+  }
+};
