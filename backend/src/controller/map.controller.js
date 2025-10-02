@@ -13,4 +13,20 @@ export const suggestionGenerator = async (req, res) => {
     console.error("suggestion generator error");
     res.status(500).json({"message": "Internal Server Error."});
   }
-}
+};
+
+export const dottedRouteGenerator = async (req, res) => {
+  const {pickupLat, pickupLon, dropLat, dropLon} = req.body;
+  if(!pickupLat || !pickupLon || !dropLat || !dropLon) {
+    return res.status(400).json({"message": "pickupLat, pickupLon, dropLat, dropLon required."});
+  }
+  try {
+    const response = await fetch(`http://router.project-osrm.org/route/v1/driving/${pickupLat},${pickupLon};${dropLat},${dropLon}?overview=full&geometries=geojson`);
+    const data = await response.json();
+    res.status(201).json(data);
+  }
+  catch {
+    console.error("dotted route generator error");
+    res.status(500).json({"message": "Internal Server Error."});
+  }
+};

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { suggestionGenerator } from "../controller/map.controller.js";
+import { dottedRouteGenerator, suggestionGenerator } from "../controller/map.controller.js";
 
 const router = Router();
 
@@ -8,5 +8,7 @@ router.get("/", (req, res) => {
 });
 
 router.post("/get-suggestions", suggestionGenerator);
+router.post("/get-dotted-route", dottedRouteGenerator);
+
 
 export default router;
