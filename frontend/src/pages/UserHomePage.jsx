@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, use } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useUserStore } from '../stores/useUserStore.js'
@@ -21,6 +21,64 @@ const UserHomePage = () => {
   const [isRejected, setIsRejected] = useState(false);
   const [captain, setCaptain] = useState(null);
   
+  const [showPickupDropBox, setShowPickupDropBox] = useState(false);
+  const [showDropDropBox, setShowDropDropBox] = useState(false);
+
+  const [pickupSuggestions, setPickupSuggestions] = useState([
+    {
+      name: "Koramangala",
+      lat: 12.9357366,
+      lon: 77.624081
+    },
+    {
+      name: "Mahatma Gandhi road",
+      lat: 12.9755264,
+      lon: 77.6067902
+    },
+    {
+      name: "HSR Layout",
+      lat: 12.9105,
+      lon: 77.6412
+    },
+    {
+      name: "Electronic City",
+      lat: 12.839,
+      lon: 77.677
+    },
+    {
+      name: "Silk Board",
+      lat: 12.9177,
+      lon: 77.6235
+    },
+  ]);
+  const [dropSuggestions, setDropSuggestions] = useState([
+    {
+      name: "Koramangala",
+      lat: 12.9357366,
+      lon: 77.624081
+    },
+    {
+      name: "Mahatma Gandhi road",
+      lat: 12.9755264,
+      lon: 77.6067902
+    },
+    {
+      name: "HSR Layout",
+      lat: 12.9105,
+      lon: 77.6412
+    },
+    {
+      name: "Electronic City",
+      lat: 12.839,
+      lon: 77.677
+    },
+    {
+      name: "Silk Board",
+      lat: 12.9177,
+      lon: 77.6235
+    },
+  ]);
+
   useEffect(() => {
     if(isRejected) {
       setIsRequested(false);
@@ -28,6 +86,14 @@ const UserHomePage = () => {
       setShowVehiclePopup(false);
     }
   }, [isRejected]);
+
+  useEffect(() => {
+    setShowPickupDropBox(pickup.trim().length > 0);
+  }, [pickup]);
+  useEffect(() => {
+    setShowDropDropBox(drop.trim().length > 0);
+  }, [drop]);
+
 
   if(!isLoggedIn) {
     return <Navigate to={"/login"} />;
@@ -101,15 +167,15 @@ const UserHomePage = () => {
   const confirmRide = () => {
     setShowVehiclePopup(false);
     setIsRequested(true);
-    // setCaptain({
-    //   name: "Captain",
-    //   phone: "1234567890",
-    //   vehicle: {
-    //     plate: "ABC123",
-    //     capacity: 4,
-    //     vehicleType: "Car"
-    //   },
-    // })
+    setCaptain({
+      name: "Captain",
+      phone: "1234567890",
+      vehicle: {
+        plate: "ABC123",
+        capacity: 4,
+        vehicleType: "Car"
+      },
+    })
   };
 
 
@@ -175,7 +241,7 @@ const UserHomePage = () => {
           <input
             className="w-full border rounded-lg p-2 mt-1"
             value={pickup}
-            onChange={(e) => setPickup(e.target.value)}
+            onChange={(e) => setPickup(e.target.value) & setShowPickupDropBox(true)}
             placeholder="Enter pickup location"
           />
 
@@ -187,10 +253,35 @@ const UserHomePage = () => {
                 {historyLocations.map((loc) => (
                   <li
                     key={loc.lat + loc.lon}
-                    className="cursor-pointer text-blue-600 hover:underline"
+                    className="cursor-pointer text-blue-600 hover:underline text-sm truncate"
                     onClick={() => handlePickupSelect(loc)}
                   >
-                    {loc.name.slice(0, 32) + "..."}
+                    {/* {loc.name.slice(0, 32) + "..."} */}
+                    {loc.name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {/* Online Suggestion in dropbox */}
+          {showPickupDropBox && (
+            <div>
+              <div className="flex justify-between">
+                <p className="text-sm text-gray-500">Online Suggestions:</p>
+                <p className="text-sm text-gray-500 font-extrabold cursor-pointer"
+                onClick={() => setShowPickupDropBox(false)}
+                >
+                  X
+                </p>
+              </div>
+              <ul class="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded shadow my-5 py-2">
+                {pickupSuggestions.map((suggestion) => (
+                  <li
+                  key={suggestion.lat + suggestion.lon}
+                  className="px-4 py-2 text-blue-600 hover:underline hover:cursor-pointer"
+                  onClick={() => handlePickupSelect(suggestion) & setShowPickupDropBox(false)}
+                  >
+                    {suggestion.name}
                   </li>
                 ))}
               </ul>
@@ -207,8 +298,9 @@ const UserHomePage = () => {
             onChange={(e) => setDrop(e.target.value)}
             placeholder="Enter drop location"
           />
-        </div>
-        {pickup && !drop && (
+
+          {/* History suggestions */}
+          {pickup && !drop && (
             <div className="mt-2">
               <p className="text-sm text-gray-500">Recent Locations:</p>
               <ul className="space-y-1">
@@ -224,6 +316,32 @@ const UserHomePage = () => {
               </ul>
             </div>
           )}
+
+          {/* online suggestions */}
+          {showDropDropBox && (
+            <div>
+              <div className="flex justify-between">
+                <p className="text-sm text-gray-500">Online Suggestions:</p>
+                <p className="text-sm text-gray-500 font-extrabold select-none cursor-pointer"
+                onClick={() => setShowDropDropBox(false)}
+                >
+                  X
+                </p>
+              </div>
+              <ul class="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded shadow my-5 py-2">
+                {dropSuggestions.map((suggestion) => (
+                  <li
+                  key={suggestion.lat + suggestion.lon + "d"}
+                  className="px-4 py-2 text-blue-600 hover:underline hover:cursor-pointer"
+                  onClick={() => handlePickupSelect(suggestion) & setShowPickupDropBox(false)}
+                  >
+                    {suggestion.name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Vehicle selection popup */}
@@ -299,15 +417,18 @@ const UserHomePage = () => {
           </div>
           <p className="text-gray-600">Your ride has been confirmed. captain on the way...</p>
           {/* captain info */}
-          <div className="mt-4">
-            <p className="text-gray-600">Captain Name: {captain.name}</p>
-            <p className="text-gray-600">Captain Phone: {captain.phone}</p>
-            <div>
-              <p>Vehicle: {captain.vehicle.vehicleType}</p>
-              <p>Capacity: {captain.vehicle.capacity} people</p>
-              <p>Plate Number: {captain.vehicle.plate}</p>
+          {captain && (
+            <div className="mt-4">
+              <p className="text-gray-600">Captain Name: {captain.name}</p>
+              <p className="text-gray-600">Captain Phone: {captain.phone}</p>
+              <div>
+                <p>Vehicle: {captain.vehicle.vehicleType}</p>
+                <p>Capacity: {captain.vehicle.capacity} people</p>
+                <p>Plate Number: {captain.vehicle.plate}</p>
+              </div>
+              <p className="text-gray-600">OTP: {123456}</p>
             </div>
-          </div>
+          )}
           <button className="mt-4 w-full bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" 
           onClick={() => {
             setIsAccepted(false);

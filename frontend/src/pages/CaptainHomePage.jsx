@@ -5,10 +5,12 @@ import { Navigate } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { motion } from "framer-motion";
+import OnRide from "../components/OnRide.jsx";
 
 const CaptainHomePage = () => {
   const { isLoggedIn, isCaptain } = useUserStore();
 
+  const [otp, setOtp] = useState("");
   const [requests, setRequests] = useState([
     {
       id: 1,
@@ -36,8 +38,10 @@ const CaptainHomePage = () => {
       drop: { name: "Hebbal", lat: 13.0358, lon: 77.5970 },
     },
   ]);
-
   const [activeRide, setActiveRide] = useState(null);
+  const [acceptedRide, setAcceptedRide] = useState(null);
+  const [rideCancelledCustomerSide, setRideCancelledCustomerSide] = useState("");
+  const [isRiding, setIsRiding] = useState(false);
 
   if (!isLoggedIn || !isCaptain) {
     return <Navigate to={"/login"} />;
@@ -59,12 +63,18 @@ const CaptainHomePage = () => {
     return null;
   };
 
+  const checkOtpAndStartRide = () => {
+    // do something TODO
+    setIsRiding(true);
+  };
+
   const handleShow = (e, req) => {
     setActiveRide(req);
   }
   const handleAccept = (e, req) => {
     e.stopPropagation();
     setActiveRide(req);
+    setAcceptedRide(req);
   };
 
   const handleReject = (e, id) => {
@@ -115,7 +125,7 @@ const CaptainHomePage = () => {
           <p className="text-gray-500">No pending requests</p>
         )}
         <ul className="space-y-4">
-          {requests.map((req) => (
+          {!acceptedRide && requests.map((req) => (
             <li
               key={req.id}
               className="border rounded-lg p-4 shadow-sm bg-gray-50"
@@ -144,6 +154,60 @@ const CaptainHomePage = () => {
               </div>
             </li>
           ))}
+          {acceptedRide && (
+            <li className="border rounded-lg p-4 shadow-sm bg-gray-50">
+              <p className="font-semibold text-lg">Request #{acceptedRide.id}</p>
+              <p className="text-sm text-gray-700">
+                <span className="font-medium">Pickup:</span> {acceptedRide.pickup.name}
+              </p>
+              <p className="text-sm text-gray-700">
+                <span className="font-medium">Drop:</span> {acceptedRide.drop.name}
+              </p>
+              {!rideCancelledCustomerSide && !isRiding && (
+                <div className="flex gap-3 mt-3">
+                  <input type="text" 
+                    placeholder="Enter OTP"
+                    className="border rounded-lg p-2 w-full"
+                    onChange={(e) => setOtp(e.target.value)}
+                  />
+                  <button 
+                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                    onClick={() => checkOtpAndStartRide()}
+                  >
+                    Confirm Ride Start
+                  </button>
+                </div>
+              )}
+              {isRiding && (
+                <div>
+                  <OnRide props={{captain: acceptedRide.captain, customer: acceptedRide.customer}}/>
+                </div>
+              )}
+              {/* Add more details here of customer TODO */}
+            </li>
+          )}
+          {acceptedRide && rideCancelledCustomerSide && (
+            <li className="border rounded-lg p-4 shadow-sm bg-red-50">
+              <p className="font-semibold text-lg">Request #{acceptedRide.id}</p>
+              <p className="text-sm text-gray-700">
+                <span className="font-medium">Pickup:</span> {acceptedRide.pickup.name}
+              </p>
+              <p className="text-sm text-gray-700">
+                <span className="font-medium">Drop:</span> {acceptedRide.drop.name}
+              </p>
+              <p className="text-sm text-gray-700">
+                <span className="font-medium">Reason:</span> {rideCancelledCustomerSide}
+              </p>
+              <button className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                onClick={() => {
+                  setRideCancelledCustomerSide("")
+                  setAcceptedRide(null)
+                }}
+              >
+                return
+              </button>
+            </li>
+          )}
         </ul>
       </div>
     </div>

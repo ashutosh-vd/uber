@@ -14,4 +14,7 @@ app.use(cors(CORS_OPTIONS));
 import authRouter from "./routers/auth.router.js";
 app.use("/v1/api/auth", authRouter);
 
+import mapRouter from "./routers/map.router.js";
+app.use("/v1/api/map", mapRouter);
+
 export default app;
