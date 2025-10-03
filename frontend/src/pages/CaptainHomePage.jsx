@@ -6,6 +6,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { motion } from "framer-motion";
 import OnRide from "../components/OnRide.jsx";
+import VehicleRoute from "../components/VehicleRoute.jsx";
 
 const CaptainHomePage = () => {
   const { isLoggedIn, isCaptain } = useUserStore();
@@ -72,7 +73,9 @@ const CaptainHomePage = () => {
 
   const handleShow = (e, req) => {
     setActiveRide(req);
-    //add pickupObj, dropObj
+    setPickupObj(req.pickup);
+    setDropObj(req.drop);
+    // console.log(pickupObj, dropObj);
   }
   const handleAccept = (e, req) => {
     e.stopPropagation();
@@ -117,6 +120,7 @@ const CaptainHomePage = () => {
               <Popup>Drop: {activeRide.drop.name}</Popup>
             </Marker>
             <FitBounds pickup={activeRide.pickup} drop={activeRide.drop} />
+            <VehicleRoute pickupObj={pickupObj} dropObj={dropObj} />
           </>
         )}
       </MapContainer>

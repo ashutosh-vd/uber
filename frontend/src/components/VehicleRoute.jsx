@@ -23,7 +23,9 @@ const VehicleRoute = ({pickupObj = null, dropObj = null}) => {
   }, [pickupObj, dropObj, getRoutes]);
   return (
     <div>
-      <Polyline positions={leafletCoords} color="blue" weight={4} />
+      {pickupObj && dropObj &&
+        <Polyline positions={leafletCoords} color="blue" weight={4} />
+      }
     </div>
   )
 }
