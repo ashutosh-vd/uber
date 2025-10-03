@@ -3,12 +3,15 @@ import React, { useState, useEffect, use } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useUserStore } from '../stores/useUserStore.js'
+import { useMapStore } from "../stores/useMapStore.js";
 import { Navigate } from 'react-router-dom';
 import { FaCar, FaMotorcycle, FaTaxi } from "react-icons/fa";
 import { motion } from "framer-motion";
 
 const UserHomePage = () => {
   const { isLoggedIn, isCaptain } = useUserStore();
+  const { testMap, getPickupSuggestions, isLoadingPickupSuggestions, pickupSuggestions, setPickupSuggestions, dropSuggestions, setDropSuggestions, isLoadingDropSuggestions, getDropSuggestions } = useMapStore();
+
   const [pickup, setPickup] = useState("");
   const [drop, setDrop] = useState("");
   const [showVehiclePopup, setShowVehiclePopup] = useState(false);
@@ -24,61 +27,6 @@ const UserHomePage = () => {
   const [showPickupDropBox, setShowPickupDropBox] = useState(false);
   const [showDropDropBox, setShowDropDropBox] = useState(false);
 
-  const [pickupSuggestions, setPickupSuggestions] = useState([
-    {
-      name: "Koramangala",
-      lat: 12.9357366,
-      lon: 77.624081
-    },
-    {
-      name: "Mahatma Gandhi road",
-      lat: 12.9755264,
-      lon: 77.6067902
-    },
-    {
-      name: "HSR Layout",
-      lat: 12.9105,
-      lon: 77.6412
-    },
-    {
-      name: "Electronic City",
-      lat: 12.839,
-      lon: 77.677
-    },
-    {
-      name: "Silk Board",
-      lat: 12.9177,
-      lon: 77.6235
-    },
-  ]);
-  const [dropSuggestions, setDropSuggestions] = useState([
-    {
-      name: "Koramangala",
-      lat: 12.9357366,
-      lon: 77.624081
-    },
-    {
-      name: "Mahatma Gandhi road",
-      lat: 12.9755264,
-      lon: 77.6067902
-    },
-    {
-      name: "HSR Layout",
-      lat: 12.9105,
-      lon: 77.6412
-    },
-    {
-      name: "Electronic City",
-      lat: 12.839,
-      lon: 77.677
-    },
-    {
-      name: "Silk Board",
-      lat: 12.9177,
-      lon: 77.6235
-    },
-  ]);
-
   useEffect(() => {
     if(isRejected) {
       setIsRequested(false);
@@ -86,6 +34,50 @@ const UserHomePage = () => {
       setShowVehiclePopup(false);
     }
   }, [isRejected]);
+
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if(pickup.trim()) {
+        try {
+          const suggestions = await getPickupSuggestions(pickup);
+          setPickupSuggestions(suggestions || []);
+          console.log(suggestions);
+          //delete it
+        }
+        catch(error) {
+          console.error(error);
+          setPickupSuggestions([]);
+        }
+      }
+      else {
+        setPickupSuggestions([]);
+      }
+    };
+
+    fetchSuggestions();
+  }, [pickup, getPickupSuggestions, setPickupSuggestions]);
+
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if(drop.trim()) {
+        try {
+          const suggestions = await getDropSuggestions(drop);
+          setDropSuggestions(suggestions || []);
+          console.log(suggestions);
+          //delete it
+        }
+        catch(error) {
+          console.error(error);
+          setDropSuggestions([]);
+        }
+      }
+      else {
+        setDropSuggestions([]);
+      }
+    };
+
+    fetchSuggestions();
+  }, [drop, getDropSuggestions, setDropSuggestions]);
 
   useEffect(() => {
     setShowPickupDropBox(pickup.trim().length > 0);
@@ -264,9 +256,14 @@ const UserHomePage = () => {
             </div>
           )}
           {/* Online Suggestion in dropbox */}
-          {showPickupDropBox && (
-            <div>
-              <div className="flex justify-between">
+          {isLoadingPickupSuggestions && (
+            <div className="mt-2">
+              <p className="text-sm text-gray-500">Loading...</p>
+            </div>
+          )}
+          {showPickupDropBox && !isLoadingPickupSuggestions && (
+            <div className="w-auto border-2 border-gray-200 relative">
+              <div className="flex justify-between w-auto">
                 <p className="text-sm text-gray-500">Online Suggestions:</p>
                 <p className="text-sm text-gray-500 font-extrabold cursor-pointer"
                 onClick={() => setShowPickupDropBox(false)}
@@ -274,16 +271,16 @@ const UserHomePage = () => {
                   X
                 </p>
               </div>
-              <ul class="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded shadow my-5 py-2">
+              <ul className="absolute left-0 right-0 bg-white overflow-y-auto border-2 border-gray-200">
                 {pickupSuggestions.map((suggestion) => (
-                  <li
+              <li
                   key={suggestion.lat + suggestion.lon}
                   className="px-4 py-2 text-blue-600 hover:underline hover:cursor-pointer"
                   onClick={() => handlePickupSelect(suggestion) & setShowPickupDropBox(false)}
-                  >
+              >
                     {suggestion.name}
                   </li>
-                ))}
+              ))}
               </ul>
             </div>
           )}
@@ -318,8 +315,13 @@ const UserHomePage = () => {
           )}
 
           {/* online suggestions */}
-          {showDropDropBox && (
-            <div>
+          {isLoadingDropSuggestions && (
+            <div className="mt-2">
+              <p className="text-sm text-gray-500">Loading...</p>
+            </div>
+          )}
+          {showDropDropBox && !isLoadingDropSuggestions && (
+            <div className="w-auto border-2 border-gray-200 relative">
               <div className="flex justify-between">
                 <p className="text-sm text-gray-500">Online Suggestions:</p>
                 <p className="text-sm text-gray-500 font-extrabold select-none cursor-pointer"
@@ -333,7 +335,7 @@ const UserHomePage = () => {
                   <li
                   key={suggestion.lat + suggestion.lon + "d"}
                   className="px-4 py-2 text-blue-600 hover:underline hover:cursor-pointer"
-                  onClick={() => handlePickupSelect(suggestion) & setShowPickupDropBox(false)}
+                  onClick={() => handleDropSelect(suggestion) & setShowDropDropBox(false)}
                   >
                     {suggestion.name}
                   </li>

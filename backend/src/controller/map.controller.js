@@ -5,9 +5,16 @@ export const suggestionGenerator = async (req, res) => {
       return res.status(400).json({"message": "query required."});
     }
     const response = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=4`);
-    const data = await response.json();
+    const data = await response?.json();
+    const cleanedData = data?.features?.map((feature) => {
+      return {
+        "name": feature?.properties?.name + ", " + feature?.properties?.country + ", " + feature?.properties?.state,
+        "lat": feature?.geometry?.coordinates[1],
+        "lon": feature?.geometry?.coordinates[0],
+      }
+    })
     // console.log("data",data);
-    res.status(201).json(data);
+    res.status(201).json(cleanedData);
   }
   catch {
     console.error("suggestion generator error");
@@ -21,7 +28,7 @@ export const dottedRouteGenerator = async (req, res) => {
     return res.status(400).json({"message": "pickupLat, pickupLon, dropLat, dropLon required."});
   }
   try {
-    const response = await fetch(`http://router.project-osrm.org/route/v1/driving/${pickupLat},${pickupLon};${dropLat},${dropLon}?overview=full&geometries=geojson`);
+    const response = await fetch(`http://router.project-osrm.org/route/v1/driving/${pickupLon},${pickupLat};${dropLon},${dropLat}?overview=full&geometries=geojson`);
     const data = await response.json();
     res.status(201).json(data);
   }
