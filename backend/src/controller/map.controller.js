@@ -30,7 +30,14 @@ export const dottedRouteGenerator = async (req, res) => {
   try {
     const response = await fetch(`http://router.project-osrm.org/route/v1/driving/${pickupLon},${pickupLat};${dropLon},${dropLat}?overview=full&geometries=geojson`);
     const data = await response.json();
-    res.status(201).json(data);
+    const routes = data?.routes?.map((route) => {
+      return {
+        "duration": route?.duration,
+        "distance": route?.distance,
+        "geometry": route?.geometry
+      }
+    });
+    res.status(201).json(routes);
   }
   catch {
     console.error("dotted route generator error");

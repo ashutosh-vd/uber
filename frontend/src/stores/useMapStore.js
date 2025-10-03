@@ -20,18 +20,16 @@ export const useMapStore = create((set, get) => ({
   getPickupSuggestions: async (query) => {
     get().setIsLoadingDropSuggestions(true);
     try {
-      console.log(query);
       const res = await api.post("/v1/api/map/get-suggestions", { query });
       if(!res.data) {
-        return [];
+        get().setPickupSuggestions([]);
+        return;
       }
       get().setPickupSuggestions(res.data);
-      console.log(res.data);
-      return res.data;
     }
     catch(error) {
       console.error(error);
-      return [];
+      get().setPickupSuggestions([]);
     }
     finally {
       get().setIsLoadingPickupSuggestions(false);
@@ -41,7 +39,6 @@ export const useMapStore = create((set, get) => ({
   testMap : async () => {
     try {
       const response = await api.get("/v1/api/map");
-      console.log("happy: ", response);
       return response.data;
     }
     catch(error) {
@@ -56,21 +53,45 @@ export const useMapStore = create((set, get) => ({
   getDropSuggestions: async (query) => {
     get().setIsLoadingDropSuggestions(true);
     try {
-      console.log(query);
       const res = await api.post("/v1/api/map/get-suggestions", { query });
       if(!res.data) {
-        return [];
+        get().setDropSuggestions([]);
+        return;
       }
       get().setDropSuggestions(res.data);
-      console.log(res.data);
-      return res.data;
     }
     catch(error) {
       console.error(error);
-      return [];
+      get().setDropSuggestions([]);
     }
     finally {
       get().setIsLoadingDropSuggestions(false);
+    }
+  },
+
+  isRouteLoading: false,
+  setIsRouteLoading: (isLoading) => set({ isRouteLoading: isLoading }),
+
+  getRoutes: async (pickupLat, pickupLon, dropLat, dropLon) => {
+    if(!pickupLat || !pickupLon || !dropLat || !dropLon) {
+      console.log("no route");
+      return null;
+    }
+    get().setIsRouteLoading(true);
+    try {
+      const response = await api.post("/v1/api/map/get-dotted-route", { pickupLat, pickupLon, dropLat, dropLon });
+      if(!response?.data) {
+        console.log("no route response");
+        return null;
+      }
+      return response.data;
+    }
+    catch(error) {
+      console.error(error);
+      return null;
+    }
+    finally {
+      get().setIsRouteLoading(false);
     }
   }
 }))

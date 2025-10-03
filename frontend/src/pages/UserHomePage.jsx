@@ -1,12 +1,13 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect, use } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline} from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useUserStore } from '../stores/useUserStore.js'
 import { useMapStore } from "../stores/useMapStore.js";
 import { Navigate } from 'react-router-dom';
 import { FaCar, FaMotorcycle, FaTaxi } from "react-icons/fa";
 import { motion } from "framer-motion";
+import VehicleRoute from "../components/VehicleRoute.jsx";
 
 const UserHomePage = () => {
   const { isLoggedIn, isCaptain } = useUserStore();
@@ -14,6 +15,8 @@ const UserHomePage = () => {
 
   const [pickup, setPickup] = useState("");
   const [drop, setDrop] = useState("");
+  const [pickupObj, setPickupObj] = useState(null);
+  const [dropObj, setDropObj] = useState(null);
   const [showVehiclePopup, setShowVehiclePopup] = useState(false);
   const [center, setCenter] = useState([28.6139, 77.2090]);
   const [dropCenter, setDropCenter] = useState([28.6139, 77.2090]);
@@ -39,10 +42,7 @@ const UserHomePage = () => {
     const fetchSuggestions = async () => {
       if(pickup.trim()) {
         try {
-          const suggestions = await getPickupSuggestions(pickup);
-          setPickupSuggestions(suggestions || []);
-          console.log(suggestions);
-          //delete it
+          await getPickupSuggestions(pickup);
         }
         catch(error) {
           console.error(error);
@@ -61,10 +61,7 @@ const UserHomePage = () => {
     const fetchSuggestions = async () => {
       if(drop.trim()) {
         try {
-          const suggestions = await getDropSuggestions(drop);
-          setDropSuggestions(suggestions || []);
-          console.log(suggestions);
-          //delete it
+          await getDropSuggestions(drop);
         }
         catch(error) {
           console.error(error);
@@ -80,11 +77,11 @@ const UserHomePage = () => {
   }, [drop, getDropSuggestions, setDropSuggestions]);
 
   useEffect(() => {
-    setShowPickupDropBox(pickup.trim().length > 0);
-  }, [pickup]);
+    setShowPickupDropBox(pickup.trim().length > 0 && pickupObj);
+  }, [pickup, pickupObj]);
   useEffect(() => {
-    setShowDropDropBox(drop.trim().length > 0);
-  }, [drop]);
+    setShowDropDropBox(drop.trim().length > 0 && dropObj);
+  }, [drop, dropObj]);
 
 
   if(!isLoggedIn) {
@@ -147,12 +144,14 @@ const UserHomePage = () => {
   const handlePickupSelect = (loc) => {
     setPickup(loc.name);
     setShowVehiclePopup(true);
+    setPickupObj(loc || {});
     setCenter([loc.lat, loc.lon]);
   };
   
   const handleDropSelect = (loc) => {
     setDrop(loc.name);
     setDropCenter([loc.lat, loc.lon]);
+    setDropObj(loc || {});
     setShowVehiclePopup(true);
   };
   
@@ -216,10 +215,13 @@ const UserHomePage = () => {
 
         {/* Fit bounds if both exist */}
         {pickup && drop && (
-          <FitBounds 
-            pickup={{ lat: center[0], lon: center[1] }} 
-            drop={{ lat: dropCenter[0], lon: dropCenter[1] }} 
-          />
+          <div>
+            <FitBounds 
+              pickup={{ lat: center[0], lon: center[1] }} 
+              drop={{ lat: dropCenter[0], lon: dropCenter[1] }} 
+            />
+            <VehicleRoute pickupObj={pickupObj} dropObj={dropObj} />
+          </div>
         )}
       </MapContainer>
         
@@ -304,10 +306,10 @@ const UserHomePage = () => {
                 {historyLocations.map((loc) => (
                   <li
                     key={"d" + loc.lat + loc.lon}
-                    className="cursor-pointer text-blue-600 hover:underline"
+                    className="cursor-pointer text-blue-600 hover:underline truncate text-sm"
                     onClick={() => handleDropSelect(loc)}
                   >
-                    {loc.name.slice(0, 32) + "..."}
+                    {loc.name}
                   </li>
                 ))}
               </ul>
@@ -330,7 +332,7 @@ const UserHomePage = () => {
                   X
                 </p>
               </div>
-              <ul class="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded shadow my-5 py-2">
+              <ul className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded shadow my-5 py-2">
                 {dropSuggestions.map((suggestion) => (
                   <li
                   key={suggestion.lat + suggestion.lon + "d"}

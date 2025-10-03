@@ -42,6 +42,8 @@ const CaptainHomePage = () => {
   const [acceptedRide, setAcceptedRide] = useState(null);
   const [rideCancelledCustomerSide, setRideCancelledCustomerSide] = useState("");
   const [isRiding, setIsRiding] = useState(false);
+  const [pickupObj, setPickupObj] = useState(null);
+  const [dropObj, setDropObj] = useState(null);
 
   if (!isLoggedIn || !isCaptain) {
     return <Navigate to={"/login"} />;
@@ -70,11 +72,12 @@ const CaptainHomePage = () => {
 
   const handleShow = (e, req) => {
     setActiveRide(req);
+    //add pickupObj, dropObj
   }
   const handleAccept = (e, req) => {
     e.stopPropagation();
     setActiveRide(req);
-    setAcceptedRide(req);
+    handleShow(e, req);
   };
 
   const handleReject = (e, id) => {
