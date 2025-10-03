@@ -20,6 +20,10 @@ const VehicleRoute = ({pickupObj = null, dropObj = null}) => {
       }
     }
     fetchRoute();
+
+    return () => {
+      setLeafletCoords([]);
+    }
   }, [pickupObj, dropObj, getRoutes]);
   return (
     <div>
