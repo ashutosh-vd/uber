@@ -7,44 +7,52 @@ import "leaflet/dist/leaflet.css";
 import { motion } from "framer-motion";
 import OnRide from "../components/OnRide.jsx";
 import VehicleRoute from "../components/VehicleRoute.jsx";
+import { useRideStore } from "../stores/useRideStore.js";
 
 const CaptainHomePage = () => {
-  const { isLoggedIn, isCaptain } = useUserStore();
+  const { isLoggedIn, isCaptain, checkAuth} = useUserStore();
+  const { getRideRequestsAll, assignCaptainClient, isCheckingOtp } = useRideStore();
 
   const [otp, setOtp] = useState("");
-  const [requests, setRequests] = useState([
-    {
-      id: 1,
-      pickup: { name: "Koramangala", lat: 12.9357366, lon: 77.624081 },
-      drop: { name: "Indiranagar", lat: 12.9732913, lon: 77.6404672 },
-    },
-    {
-      id: 2,
-      pickup: { name: "Mahatma Gandhi Road", lat: 12.9755264, lon: 77.6067902 },
-      drop: { name: "Whitefield", lat: 12.9698, lon: 77.7499 },
-    },
-    {
-      id: 3,
-      pickup: { name: "HSR Layout", lat: 12.9105, lon: 77.6412 },
-      drop: { name: "BTM Layout", lat: 12.9166, lon: 77.6101 },
-    },
-    {
-      id: 4,
-      pickup: { name: "Electronic City", lat: 12.839, lon: 77.677 },
-      drop: { name: "Silk Board", lat: 12.9177, lon: 77.6235 },
-    },
-    {
-      id: 5,
-      pickup: { name: "Marathahalli", lat: 12.9592, lon: 77.6974 },
-      drop: { name: "Hebbal", lat: 13.0358, lon: 77.5970 },
-    },
-  ]);
+  const [requests, setRequests] = useState([]);
   const [activeRide, setActiveRide] = useState(null);
   const [acceptedRide, setAcceptedRide] = useState(null);
   const [rideCancelledCustomerSide, setRideCancelledCustomerSide] = useState("");
   const [isRiding, setIsRiding] = useState(false);
   const [pickupObj, setPickupObj] = useState(null);
   const [dropObj, setDropObj] = useState(null);
+
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  useEffect(() => {
+    if(acceptedRide) {
+      setRequests([acceptedRide]);
+      return;
+    }
+    const fetchRideRequests = async () => {
+      try {
+        const data = await getRideRequestsAll();
+        const newRequests = data.map((req) => {
+          return {
+            id: req._id,
+            pickup: req.pickup,
+            drop: req.drop,
+            createdAt: req.createdAt,
+            rejected: requests.some((origReq) => origReq.id === req._id && origReq.rejected === true),
+          }
+        });
+        setRequests(newRequests);
+      }
+      catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchRideRequests();
+  }, [acceptedRide, getRideRequestsAll]);
 
   if (!isLoggedIn || !isCaptain) {
     return <Navigate to={"/login"} />;
@@ -66,9 +74,13 @@ const CaptainHomePage = () => {
     return null;
   };
 
-  const checkOtpAndStartRide = () => {
-    // do something TODO
-    setIsRiding(true);
+  const checkOtpAndStartRide = async (otp, rideId) => {
+    const captainAssignment = await assignCaptainClient(otp, rideId);
+
+    setIsRiding(captainAssignment);
+    if(!captainAssignment) {
+      return alert("invalid otp");
+    }
   };
 
   const handleShow = (e, req) => {
@@ -80,6 +92,7 @@ const CaptainHomePage = () => {
   const handleAccept = (e, req) => {
     e.stopPropagation();
     setActiveRide(req);
+    setAcceptedRide(req);
     handleShow(e, req);
   };
 
@@ -128,11 +141,11 @@ const CaptainHomePage = () => {
       {/* Requests Panel */}
       <div className="relative z-20 ml-auto w-1/3 h-full bg-white shadow-2xl p-6 overflow-y-auto">
         <h2 className="text-2xl font-bold mb-4">Ride Requests</h2>
-        {requests.length === 0 && (
+        {requests.reduce((acc, req) => acc + !req.rejected, 0) === 0 && (
           <p className="text-gray-500">No pending requests</p>
         )}
         <ul className="space-y-4">
-          {!acceptedRide && requests.map((req) => (
+          {!acceptedRide && [...requests].reverse().map((req) => !req.rejected && (
             <li
               key={req.id}
               className="border rounded-lg p-4 shadow-sm bg-gray-50"
@@ -144,6 +157,10 @@ const CaptainHomePage = () => {
               </p>
               <p className="text-sm text-gray-700">
                 <span className="font-medium">Drop:</span> {req.drop.name}
+              </p>
+              <p className="text-sm text-gray-700">
+                <span className="font-medium">Requested At: </span> 
+                {req.createdAt?.split("T")[0] + ", " + req.createdAt?.split("T")[1].slice(0, -1)}
               </p>
               <div className="flex gap-3 mt-3">
                 <button
@@ -170,7 +187,7 @@ const CaptainHomePage = () => {
               <p className="text-sm text-gray-700">
                 <span className="font-medium">Drop:</span> {acceptedRide.drop.name}
               </p>
-              {!rideCancelledCustomerSide && !isRiding && (
+              {!rideCancelledCustomerSide && !isRiding && acceptedRide && (
                 <div className="flex gap-3 mt-3">
                   <input type="text" 
                     placeholder="Enter OTP"
@@ -179,9 +196,10 @@ const CaptainHomePage = () => {
                   />
                   <button 
                     className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
-                    onClick={() => checkOtpAndStartRide()}
+                    disabled={isCheckingOtp}
+                    onClick={() => checkOtpAndStartRide(otp, acceptedRide.id)}
                   >
-                    Confirm Ride Start
+                    {isCheckingOtp ? "Checking OTP..." : "Confirm Start Ride"}
                   </button>
                 </div>
               )}

@@ -17,4 +17,7 @@ app.use("/v1/api/auth", authRouter);
 import mapRouter from "./routers/map.router.js";
 app.use("/v1/api/map", mapRouter);
 
+import rideRouter from "./routers/ride.router.js";
+app.use("/v1/api/ride", rideRouter);
+
 export default app;

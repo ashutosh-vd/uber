@@ -36,6 +36,7 @@ export const useUserStore = create(
         } 
         catch (err) {
           // console.error("first err: jwt auth error:", err?.message);
+          console.log(err?.response);
           if (err?.response?.status === 401) {
             try {
               await api.post("/v1/api/auth/refresh-token");

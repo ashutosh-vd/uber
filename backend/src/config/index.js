@@ -10,8 +10,10 @@ export const COOKIE_CONFIG = {
   sameSite: "strict",
 }
 
+export const CORS_ORIGIN = "http://localhost:5173";
+
 export const CORS_OPTIONS = {
-  origin: "http://localhost:5173",
+  origin: CORS_ORIGIN,
   credentials: true,
   maxAge: "7d",
 }
