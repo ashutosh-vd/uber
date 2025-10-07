@@ -8,3 +8,10 @@ export const initSocket = (server) => {
     cors: CORS_ORIGIN,
   });
 }
+
+export const getSocket = () => {
+  if(!io) {
+    throw new Error("io not initialised.")
+  }
+  return io;
+};
