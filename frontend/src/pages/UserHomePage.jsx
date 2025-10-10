@@ -8,10 +8,22 @@ import { Navigate } from 'react-router-dom';
 import { FaCar, FaMotorcycle, FaTaxi } from "react-icons/fa";
 import { motion } from "framer-motion";
 import VehicleRoute from "../components/VehicleRoute.jsx";
+import { useRideStore } from "../stores/useRideStore.js";
+import { set } from "mongoose";
 
 const UserHomePage = () => {
-  const { isLoggedIn, isCaptain } = useUserStore();
-  const { testMap, getPickupSuggestions, isLoadingPickupSuggestions, pickupSuggestions, setPickupSuggestions, dropSuggestions, setDropSuggestions, isLoadingDropSuggestions, getDropSuggestions } = useMapStore();
+  const { isLoggedIn, isCaptain, checkAuth } = useUserStore();
+  const { testMap, 
+          getPickupSuggestions, 
+          isLoadingPickupSuggestions, 
+          pickupSuggestions, 
+          setPickupSuggestions, 
+          dropSuggestions, 
+          setDropSuggestions, 
+          isLoadingDropSuggestions, 
+          getDropSuggestions 
+        } = useMapStore();
+  const { createRide, activeRide, confirmAnyActiveRide, cancelRide} = useRideStore();
 
   const [pickup, setPickup] = useState("");
   const [drop, setDrop] = useState("");
@@ -24,19 +36,53 @@ const UserHomePage = () => {
 
   const [isRequested, setIsRequested] = useState(false);
   const [isAccepted, setIsAccepted] = useState(false);
-  const [isRejected, setIsRejected] = useState(false);
+  const [gotRejected, setGotRejected] = useState(false);
   const [captain, setCaptain] = useState(null);
   
   const [showPickupDropBox, setShowPickupDropBox] = useState(false);
   const [showDropDropBox, setShowDropDropBox] = useState(false);
 
   useEffect(() => {
-    if(isRejected) {
+    const check = async () => {
+      await checkAuth();
+      console.log("checked");
+    }
+    check();
+  }, []);
+  useEffect(() => {
+    if(gotRejected) {
       setIsRequested(false);
       setCaptain(null);
       setShowVehiclePopup(false);
     }
-  }, [isRejected]);
+  }, [gotRejected]);
+
+  useEffect(() => {
+    const fetchRideIfActive = async () => {
+      try {
+        const ride = await confirmAnyActiveRide();
+        if(!ride) {
+          setIsRequested(false);
+          setCaptain(null);
+          setShowVehiclePopup(false);
+          setIsAccepted(false);
+          setGotRejected(false);
+          return;
+        }
+        else {
+          setIsRequested(true);
+          setCaptain(ride.captain);
+          setShowVehiclePopup(false);
+          setIsAccepted(false);
+          setGotRejected(false);
+        }
+      }
+      catch (error) {
+        alert(error?.response?.data?.message || error?.message || "something went wrong");
+      }
+    };
+    fetchRideIfActive();
+  }, [confirmAnyActiveRide]);
 
   useEffect(() => {
     const fetchSuggestions = async () => {
@@ -155,7 +201,7 @@ const UserHomePage = () => {
     setShowVehiclePopup(true);
   };
   
-  const confirmRide = () => {
+  const confirmRide = async () => {
     setShowVehiclePopup(false);
     setIsRequested(true);
     setCaptain({
@@ -166,8 +212,27 @@ const UserHomePage = () => {
         capacity: 4,
         vehicleType: "Car"
       },
-    })
+    });
+    console.log(pickupObj, dropObj);
+    await createRide({pickup : pickupObj, drop : dropObj});
   };
+
+  const cancelRideRequestHandler = async () => {
+    try {
+      const res = await cancelRide();
+      if(res) {
+        setIsRequested(false);
+        setCaptain(null);
+        setShowVehiclePopup(false);
+        setIsAccepted(false);
+        setGotRejected(false);
+        alert("ride cancelled");
+      }
+    }
+    catch(error) {
+      alert(error?.response?.data?.message || error?.message || "something went wrong");
+    }
+  }
 
 
   const vehicles = [
@@ -398,10 +463,7 @@ const UserHomePage = () => {
           <p className="text-gray-600">Your ride request has been sent successfully.</p>
           
           <button className="mt-4 w-full bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" 
-          onClick={() => {
-            setIsRequested(false);
-            setShowVehiclePopup(true);
-          }}
+          onClick={cancelRideRequestHandler}
           >
             cancel
           </button>
@@ -442,7 +504,7 @@ const UserHomePage = () => {
           </button>
         </motion.div>
       )}
-      {isRejected && !showVehiclePopup && (
+      {gotRejected && !showVehiclePopup && (
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
@@ -456,7 +518,7 @@ const UserHomePage = () => {
           <p className="text-gray-600">Your ride has been rejected. Please try again.</p>
           <button className="mt-4 w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" 
           onClick={() => {
-            setIsRejected(false);
+            setGotRejected(false);
             setShowVehiclePopup(true);
           }}
           >

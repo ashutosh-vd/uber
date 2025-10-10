@@ -1,5 +1,35 @@
 import Ride from "../models/ride.model.js";
 
+export const getActiveRide = async (req, res) => {
+  const {_id : userId} = req.user;
+
+  if(!userId) {
+    throw new Error("user not authenticated.");
+  }
+  try {
+    const activeRide = await Ride.findOne({ 
+      $and : [
+        {
+          $or : [{user : userId}, {captain : userId}]
+        },
+        { 
+          $or : [{status: "PENDING"}, {status : "ACTIVE"}, {status: "ACCEPTED"}]
+        }
+      ]
+    });
+
+    if(activeRide?.status != "PENDING" && activeRide?.captain) {
+      await activeRide.populate("captain", "user");
+    }
+
+    return res.status(201).json(activeRide);
+  }
+  catch (error) {
+    console.error(error);
+    res.status(401).json({"message": "Internal Server Error."});
+  }
+};
+
 export const createRideController = async (req, res) => {
   const { pickup , drop } = req.body;
   const { _id : userId } = req.user;
@@ -11,7 +41,22 @@ export const createRideController = async (req, res) => {
     res.status(401).json({"message": "login required."});
   }
   try {
-    const newRide = await new Ride({
+    let newRide = await Ride.findOne({ 
+      $and : [
+        {
+          $or : [{user : userId}, {captain : userId}]
+        },
+        { 
+          $or : [{status: "PENDING"}, {status : "ACTIVE"}, {status: "ACCEPTED"}]
+        }
+      ]
+    });
+
+    if(newRide) {
+      return res.status(402).json({"message": "pending ride exists."});
+    }
+    
+    newRide = await new Ride({
       user: userId,
       pickup,
       drop
@@ -59,14 +104,17 @@ export const assignCaptain = async (req, res) => {
 
 
 export const cancelRideCustomerSide = async (req, res) => {
-  const { _id : rideId } = req.body;
+  const { _id : rideId } = req.body;//from req.body not req.user
   if(!rideId) {
     res.status(400).json({"message": "_id required."});
+  }
+  if(!req.user) {
+    res.status(400).json({"message": "authentication error."});
   }
 
   try {
     const rideRequest = await Ride.findById(rideId);
-    if(!rideRequest) {
+    if(!rideRequest || rideRequest.user != req.user._id) {
       res.status(404).json({"message": "Ride not found."});
     }
     await Ride.findByIdAndDelete(rideId);

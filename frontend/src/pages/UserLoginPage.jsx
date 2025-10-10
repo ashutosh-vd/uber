@@ -9,7 +9,10 @@ const UserLoginPage = () => {
   const {isLoggedIn, setLoggedIn, isCaptain, setCaptain, isLoggingIn, setLoggingIn, setName, checkAuth} = useUserStore();
 
   useEffect(() => {
-    checkAuth();
+    const check = async () => {
+      await checkAuth();
+    }
+    check();
   }, []);
 
   if(isLoggedIn) {

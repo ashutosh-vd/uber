@@ -26,8 +26,8 @@ const Navbar = () => {
         <>
         {
           isCaptain ? 
-          <div>Ride Request</div> :
-          <div>Book a ride</div>
+          <div><Link to={'/captain'}>Ride Requests</Link></div> :
+          <div><Link to={'/user'}>Book a Ride</Link></div>
         }
         <div>Profile</div>
         <div onClick={logoutHandler} className='cursor-pointer select-none'>Log out</div>

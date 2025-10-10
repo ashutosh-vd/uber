@@ -7,6 +7,8 @@ export const initSocket = (server) => {
   io = new Server(server, {
     cors: CORS_ORIGIN,
   });
+
+  return io;
 }
 
 export const getSocket = () => {

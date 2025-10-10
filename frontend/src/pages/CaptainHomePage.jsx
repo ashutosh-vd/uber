@@ -24,7 +24,10 @@ const CaptainHomePage = () => {
 
 
   useEffect(() => {
-    checkAuth();
+    const check = async () => {
+      await checkAuth();
+    };
+    check();
   }, []);
 
   useEffect(() => {
