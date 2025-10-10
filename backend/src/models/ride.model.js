@@ -8,7 +8,7 @@ const rideSchema = new mongoose.Schema({
   },
   captain: {
     type : mongoose.Schema.Types.ObjectId,
-    ref: "User"
+    ref: "Captain"
   },
   pickup: {
     type: {
@@ -28,7 +28,7 @@ const rideSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    emum: ["ACTIVE", "PENDING", "ACCEPTED", "CANCELLED", "COMPLETED"],
+    enum: ["ACTIVE", "PENDING", "ACCEPTED", "CANCELLED", "COMPLETED"],
     default: "PENDING"
   },
   otp: {

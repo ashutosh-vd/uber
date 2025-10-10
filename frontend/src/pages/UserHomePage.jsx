@@ -61,6 +61,7 @@ const UserHomePage = () => {
     const fetchRideIfActive = async () => {
       try {
         const ride = await confirmAnyActiveRide();
+        console.log(ride);
         if(!ride) {
           setIsRequested(false);
           setCaptain(null);
@@ -70,10 +71,10 @@ const UserHomePage = () => {
           return;
         }
         else {
-          setIsRequested(true);
+          setIsRequested(ride.status === "PENDING");
           setCaptain(ride.captain);
           setShowVehiclePopup(false);
-          setIsAccepted(false);
+          setIsAccepted(ride.status === "ACCEPTED");
           setGotRejected(false);
         }
       }
@@ -448,7 +449,7 @@ const UserHomePage = () => {
         </motion.div>
       )}
       {/* ride request sent message */}
-      {isRequested && (
+      {isRequested && !isAccepted && (
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
@@ -470,7 +471,7 @@ const UserHomePage = () => {
         </motion.div>
       )}
       {/* ride confirmed message */}
-      {isAccepted && (
+      {isAccepted && !isRequested && (
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}

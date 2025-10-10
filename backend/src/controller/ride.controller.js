@@ -4,10 +4,10 @@ export const getActiveRide = async (req, res) => {
   const {_id : userId} = req.user;
 
   if(!userId) {
-    throw new Error("user not authenticated.");
+    return res.status(400).json({"message": "userId required."});
   }
   try {
-    const activeRide = await Ride.findOne({ 
+    let activeRide = await Ride.findOne({ 
       $and : [
         {
           $or : [{user : userId}, {captain : userId}]
@@ -19,14 +19,14 @@ export const getActiveRide = async (req, res) => {
     });
 
     if(activeRide?.status != "PENDING" && activeRide?.captain) {
-      await activeRide.populate("captain", "user");
+      activeRide = await activeRide.populate("captain");
     }
 
-    return res.status(201).json(activeRide);
+    return res.status(200).json(activeRide);
   }
   catch (error) {
     console.error(error);
-    res.status(401).json({"message": "Internal Server Error."});
+    res.status(500).json({"message": "Internal Server Error."});
   }
 };
 
@@ -77,9 +77,35 @@ export const createRideController = async (req, res) => {
 
 };
 
+export const assignCaptainForAcceptance = async (req, res) => {
+  const { rideId } = req.body;
+  const { captainId } = req.user;
+
+  if(!rideId || !captainId) {
+    res.status(400).json({"message": "rideId and captainId required."});
+  }
+
+  try {
+    const rideRequest = await Ride.findById(rideId);
+    if(!rideRequest) {
+      return res.status(410).json({"message" : "Ride not available."});
+    }
+    rideRequest.captain = captainId;
+    rideRequest.status = "ACCEPTED";
+    await rideRequest.save();
+    await rideRequest.populate("captain");
+
+    res.status(200).json({"message": "Captain assigned successfully.", ...rideRequest._doc});
+  }
+  catch (error) {
+    console.error("captain assign error: ", error);
+    res.status(500).json({"message": "Internal Server Error."});
+  };
+}
+
 export const assignCaptain = async (req, res) => {
   const { rideId, otp } = req.body;
-  const { _id : captainId } = req.user;
+  const { captainId } = req.user;
 
   if(!rideId || !captainId || !otp) {
     res.status(400).json({"message": "rideId and captainId and OTP required."});
@@ -87,14 +113,20 @@ export const assignCaptain = async (req, res) => {
 
   try {
     const rideRequest = await Ride.findById(rideId);
+    console.log(rideRequest);
+    if(!rideRequest) {
+      return res.status(410).json({"message" : "Ride not available."});
+    }
     if(!rideRequest.compareOtp(otp)) {
       return res.status(400).json({"message": "Invalid OTP."});
     }
-    rideRequest.captain = captainId;
-    rideRequest.status = "ACCEPTED";
-    await rideRequest.save();
 
-    res.status(200).json({"message": "Captain assigned successfully."});
+    rideRequest.captain = captainId;
+    rideRequest.status = "ACTIVE";
+    await rideRequest.save();
+    await rideRequest.populate("captain", "user");
+
+    res.status(200).json({"message": "Captain assigned successfully.", ...rideRequest._doc});
   }
   catch (error) {
     console.error("captain assign error: ", error);
@@ -127,7 +159,7 @@ export const cancelRideCustomerSide = async (req, res) => {
 };
 
 export const getAllRidesForCaptain = async (req, res) => {
-  const { _id : captainId } = req.user;
+  const { captainId } = req.user;
   if(!captainId) {
     res.status(400).json({"message": "captainId required."});
   }

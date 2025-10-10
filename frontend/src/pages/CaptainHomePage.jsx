@@ -10,12 +10,14 @@ import VehicleRoute from "../components/VehicleRoute.jsx";
 import { useRideStore } from "../stores/useRideStore.js";
 
 const CaptainHomePage = () => {
-  const { isLoggedIn, isCaptain, checkAuth} = useUserStore();
-  const { getRideRequestsAll, assignCaptainClient, isCheckingOtp } = useRideStore();
+  const { isLoggedIn, isCaptain, checkAuth } = useUserStore();
+  const { getRideRequestsAll, assignCaptainStartRide, isCheckingOtp, confirmAnyActiveRide ,assignCaptainAccept } = useRideStore();
 
   const [otp, setOtp] = useState("");
   const [requests, setRequests] = useState([]);
-  const [activeRide, setActiveRide] = useState(null);
+  const [selectedRide, setSelectedRide] = useState(null);
+  const [acceptanceInterest, setAcceptanceInterest] = useState(null);
+
   const [acceptedRide, setAcceptedRide] = useState(null);
   const [rideCancelledCustomerSide, setRideCancelledCustomerSide] = useState("");
   const [isRiding, setIsRiding] = useState(false);
@@ -31,6 +33,17 @@ const CaptainHomePage = () => {
   }, []);
 
   useEffect(() => {
+    const activeRideGet = async () => {
+      const prevActiveRide = await confirmAnyActiveRide();
+      setIsRiding(prevActiveRide?.status === "ACTIVE");
+      setAcceptedRide(prevActiveRide);
+      setAcceptanceInterest(prevActiveRide)
+      return prevActiveRide;
+    }
+    activeRideGet();
+  }, [setAcceptedRide]);
+
+  useEffect(() => {
     if(acceptedRide) {
       setRequests([acceptedRide]);
       return;
@@ -38,6 +51,9 @@ const CaptainHomePage = () => {
     const fetchRideRequests = async () => {
       try {
         const data = await getRideRequestsAll();
+        if(!data) {
+          return;
+        }
         const newRequests = data.map((req) => {
           return {
             id: req._id,
@@ -78,24 +94,30 @@ const CaptainHomePage = () => {
   };
 
   const checkOtpAndStartRide = async (otp, rideId) => {
-    const captainAssignment = await assignCaptainClient(otp, rideId);
-
-    setIsRiding(captainAssignment);
-    if(!captainAssignment) {
-      return alert("invalid otp");
+    // console.log("clicked");
+    const startRide = await assignCaptainStartRide(otp, rideId);
+    if(!startRide) {
+      console.log("ride not started.");
+      return;
     }
+    setIsRiding(true);
   };
 
   const handleShow = (e, req) => {
-    setActiveRide(req);
+    setSelectedRide(req);
     setPickupObj(req.pickup);
     setDropObj(req.drop);
     // console.log(pickupObj, dropObj);
   }
-  const handleAccept = (e, req) => {
+  const handleAccept = async (e, req) => {
     e.stopPropagation();
-    setActiveRide(req);
-    setAcceptedRide(req);
+    setAcceptanceInterest(req);
+    const rideReq = await assignCaptainAccept(req.id);
+    if(!rideReq) {
+      return alert("invalid otp");
+    }
+    setIsRiding(rideReq === "ACTIVE");
+    setAcceptedRide(rideReq);
     handleShow(e, req);
   };
 
@@ -126,16 +148,16 @@ const CaptainHomePage = () => {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {/* If a ride is active, show pickup and drop */}
-        {activeRide && (
+        {/* If a ride is selected, show pickup and drop */}
+        {selectedRide && (
           <>
-            <Marker position={[activeRide.pickup.lat, activeRide.pickup.lon]}>
-              <Popup>Pickup: {activeRide.pickup.name}</Popup>
+            <Marker position={[selectedRide.pickup.lat, selectedRide.pickup.lon]}>
+              <Popup>Pickup: {selectedRide.pickup.name}</Popup>
             </Marker>
-            <Marker position={[activeRide.drop.lat, activeRide.drop.lon]}>
-              <Popup>Drop: {activeRide.drop.name}</Popup>
+            <Marker position={[selectedRide.drop.lat, selectedRide.drop.lon]}>
+              <Popup>Drop: {selectedRide.drop.name}</Popup>
             </Marker>
-            <FitBounds pickup={activeRide.pickup} drop={activeRide.drop} />
+            <FitBounds pickup={selectedRide.pickup} drop={selectedRide.drop} />
             <VehicleRoute pickupObj={pickupObj} dropObj={dropObj} />
           </>
         )}
@@ -143,12 +165,14 @@ const CaptainHomePage = () => {
 
       {/* Requests Panel */}
       <div className="relative z-20 ml-auto w-1/3 h-full bg-white shadow-2xl p-6 overflow-y-auto">
-        <h2 className="text-2xl font-bold mb-4">Ride Requests</h2>
+        <h2 className="text-2xl font-bold mb-4">
+          {acceptedRide ? "Active Request" : "Ride Requests"}
+        </h2>
         {requests.reduce((acc, req) => acc + !req.rejected, 0) === 0 && (
           <p className="text-gray-500">No pending requests</p>
         )}
         <ul className="space-y-4">
-          {!acceptedRide && [...requests].reverse().map((req) => !req.rejected && (
+          {!acceptanceInterest && !acceptedRide && [...requests].reverse().map((req) => !req.rejected && (
             <li
               key={req.id}
               className="border rounded-lg p-4 shadow-sm bg-gray-50"
@@ -181,16 +205,16 @@ const CaptainHomePage = () => {
               </div>
             </li>
           ))}
-          {acceptedRide && (
+          {(acceptanceInterest) && (
             <li className="border rounded-lg p-4 shadow-sm bg-gray-50">
-              <p className="font-semibold text-lg">Request #{acceptedRide.id}</p>
+              <p className="font-semibold text-lg">Request #{acceptanceInterest?.id}</p>
               <p className="text-sm text-gray-700">
-                <span className="font-medium">Pickup:</span> {acceptedRide.pickup.name}
+                <span className="font-medium">Pickup:</span> {acceptanceInterest?.pickup.name}
               </p>
               <p className="text-sm text-gray-700">
-                <span className="font-medium">Drop:</span> {acceptedRide.drop.name}
+                <span className="font-medium">Drop:</span> {acceptanceInterest?.drop.name}
               </p>
-              {!rideCancelledCustomerSide && !isRiding && acceptedRide && (
+              {!rideCancelledCustomerSide && acceptanceInterest && acceptedRide && !isRiding && (
                 <div className="flex gap-3 mt-3">
                   <input type="text" 
                     placeholder="Enter OTP"
@@ -200,15 +224,20 @@ const CaptainHomePage = () => {
                   <button 
                     className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
                     disabled={isCheckingOtp}
-                    onClick={() => checkOtpAndStartRide(otp, acceptedRide.id)}
+                    onClick={() => checkOtpAndStartRide(otp, acceptanceInterest.id)}
                   >
                     {isCheckingOtp ? "Checking OTP..." : "Confirm Start Ride"}
                   </button>
                 </div>
               )}
+              {acceptedRide && !rideCancelledCustomerSide && !isRiding && (
+                <div className="mt-3 w-max px-4 py-2 bg-yellow-500 text-white rounded-lg select-none">
+                  On the way
+                </div>
+              )}
               {isRiding && (
-                <div>
-                  <OnRide props={{captain: acceptedRide.captain, customer: acceptedRide.customer}}/>
+                <div className="mt-3 w-max flex gap-3 justify-center items-center">
+                  <OnRide props={{captain: acceptedRide?.captain, customer: acceptedRide?.customer}}/>
                 </div>
               )}
               {/* Add more details here of customer TODO */}

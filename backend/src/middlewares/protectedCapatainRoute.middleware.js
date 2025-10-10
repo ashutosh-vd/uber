@@ -25,7 +25,7 @@ export const protectedCaptainRoute = async (req, res, next) => {
     }
     
     req.user = decoded;
-    req.captain = decoded;
+    req.captain = { captainId : decoded.captainId };
     
     return next();
   }

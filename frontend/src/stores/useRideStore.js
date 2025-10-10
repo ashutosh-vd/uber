@@ -8,15 +8,16 @@ export const useRideStore = create((set, get) => ({
       return response.data;
     }
     catch(error) {
-      console.error("getRideRequestsAll error: ", error);
+      console.error("getRideRequestsAll error: ", error?.response?.data?.message || error);
     }
   },
 
   isCheckingOtp: false,
   setIsCheckingOtp: (value) => set({ isCheckingOtp: value }),
-  assignCaptainClient: async (otp, rideId) => {
+  assignCaptainStartRide: async (otp, rideId) => {
     if(!otp) {
-      console.error("invalid otp")
+      console.error("invalid otp");
+      alert("invalid otp");
       return;
     }
     get().setIsCheckingOtp(true);
@@ -25,10 +26,25 @@ export const useRideStore = create((set, get) => ({
       return response.data;
     }
     catch(error) {
-      console.error("assignCaptainClient error: ", error);
+      console.error("assignCaptainClient error: ", error?.response?.data?.message || error);
+      alert(error?.response?.data?.message || "Something went wrong.");
     }
     finally {
       get().setIsCheckingOtp(false);
+    }
+  },
+
+  assignCaptainAccept: async (rideId) => {
+    if(!rideId) {
+      return console.error("rideId not specified.");
+    }
+    try {
+      const response = await api.post("/v1/api/ride/accept-ride", {rideId});
+      return response.data;
+    }
+    catch(error) {
+      console.error("assignCaptainAccept error: ", error?.response?.data?.message || error);
+      alert(error?.response?.data?.message || "Something went wrong.");
     }
   },
 
@@ -44,7 +60,7 @@ export const useRideStore = create((set, get) => ({
       return response.data;
     }
     catch (error) {
-      console.log("setIsCreatedRideError: ", error);
+      console.log("setIsCreatedRideError: ", error?.response?.data?.message || error);
       throw error;
     }
   },
@@ -59,7 +75,7 @@ export const useRideStore = create((set, get) => ({
       return response.data;
     }
     catch(error) {
-      console.error("create ride error: ",error);
+      console.error("create ride error: ", error?.response?.data?.message || error);
       throw error;
     }
   },
@@ -71,7 +87,7 @@ export const useRideStore = create((set, get) => ({
       return response.data;
     }
     catch(error) {
-      console.error("cancelRide error: ",error);
+      console.error("cancelRide error: ",error?.response?.data?.message || error);
       throw error;
     }
   }

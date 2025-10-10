@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { ACCESS_TOKEN_CONFIG, REFRESH_TOKEN_CONFIG } from "../config/index.js";
+import Captain from "./captain.model.js";
 
 const userSchema = mongoose.Schema({
   fullname: {
@@ -41,12 +42,18 @@ userSchema.methods.generateRefreshToken = async function () {
 }
 
 userSchema.methods.generateAccessToken = async function () {
-  const payload = {
+  let payload = {
     _id: this.id,
     fullname: this.fullname,
     email: this.email,
     isCaptain: this.isCaptain,
   };
+  if(this.isCaptain) {
+    payload = {
+      ...payload,
+      captainId: (await Captain.findOne({user: this._id}))._id
+    }
+  }
   return await jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, ACCESS_TOKEN_CONFIG);
 }
 
