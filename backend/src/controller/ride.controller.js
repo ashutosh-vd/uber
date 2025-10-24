@@ -121,7 +121,6 @@ export const assignCaptain = async (req, res) => {
       return res.status(400).json({"message": "Invalid OTP."});
     }
 
-    rideRequest.captain = captainId;
     rideRequest.status = "ACTIVE";
     await rideRequest.save();
     await rideRequest.populate("captain", "user");
